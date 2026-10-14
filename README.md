@@ -1,82 +1,86 @@
-# 🚀 SPACE VANGUARD: STAR CITADEL
+# 🚀 SPACE VANGUARD 2.0: STAR CITADEL
 
-Sebuah arcade space shooter retro berkecepatan tinggi yang ditulis murni dalam **Bahasa C (C99)** menggunakan Windows Console API dengan teknik **Zero-Flicker Double Buffering**, sistem partikel ledakan, audio chiptune retro multi-thread, boss battles, dan ragam power-up.
+A high-speed retro arcade space shooter written purely in **C (C11)** using the Windows Console API featuring **Zero-Flicker Double Buffering** with half-block characters (96x56 resolution), particle explosion systems, real-time multi-threaded chiptune audio synthesis, multi-phase bullet-hell boss battles, and diverse power-ups.
 
 ---
 
-## 🎮 Cara Menjalankan Game
+## 🎮 How to Run the Game
 
-Kamu bisa langsung menjalankan game dengan salah satu cara berikut:
+You can run the game directly using one of the following methods:
 
-1. **Klik Dua Kali File**:
-   - Double-click [`run.bat`](file:///d:/Project/run.bat) atau [`game.exe`](file:///d:/Project/game.exe) di File Explorer.
-2. **Lewat Terminal / PowerShell**:
+1. **Double-Click File**:
+   - Double-click [`run.bat`](file:///d:/Project/Space%20Vanguard/run.bat) or [`game.exe`](file:///d:/Project/Space%20Vanguard/game.exe) in File Explorer.
+2. **Via Terminal / PowerShell**:
    ```powershell
    .\run.bat
-   # atau
+   # or
    .\game.exe
    ```
 
 ---
 
-## 🕹️ Kontrol Permainan
+## 🕹️ Game Controls
 
-| Tombol | Fungsi |
+| Key | Action |
 | :--- | :--- |
-| **`W, A, S, D`** atau **Tombol Panah** | Menggerakkan pesawat Starfighter ke segala arah |
-| **`SPASI`** atau **`J`** | Menembakkan Laser (Tekan atau Tahan) |
-| **`B`** atau **`K`** | Meluncurkan **Smart Bomb** (Menghancurkan peluru & memberi damage massal) |
-| **`M`** | Mute / Unmute Efek Suara Retro (Audio Chiptune) |
-| **`P`** atau **`ESC`** | Jeda Permainan (Pause) |
-| **`R`** | Main Lagi (pada layar Game Over) |
-| **`Q`** | Keluar dari Permainan |
+| **`W, A, S, D`** or **Arrow Keys** | Move Starfighter in all directions |
+| **`SPACE`**, **`Z`**, or **`J`** | Fire Laser (Tap or Hold) |
+| **`SHIFT`** (Hold) | **Focus Mode** (Precision movement & tightened shot spread) |
+| **`B`**, **`X`**, or **`K`** | Launch **Smart Bomb** (Clears screen bullets & grants temporary invulnerability) |
+| **`M`** | Toggle Background Music (ON/OFF) |
+| **`N`** | Toggle Sound Effects (ON/OFF) |
+| **`P`** or **`ESC`** | Pause Game |
+| **`R`** | Retry / Play Again (on Game Over screen) |
+| **`ENTER`** | Confirm / Menu Select |
 
 ---
 
-## 💎 Fitur & Mekanisme Permainan
+## 💎 Features & Game Mechanics
 
-### 1. Sistem Senjata & Level Up
-Tingkatkan kekuatan tembakan pesawatmu dengan mengambil item **`[W]`**:
-- **Level 1**: *Single Laser* (Tembakan lurus terfokus)
-- **Level 2**: *Dual Blasters* (Dua tembakan paralel beruntun)
-- **Level 3**: *Triple Spread* (Tembakan menyebar sudut 3 arah)
-- **Level 4**: *Plasma Cannons* (Tiga bola energi plasma super cepat)
+### 1. Weapon System & Level Up
+Increase your starfighter's firepower by collecting **`[P]`** power capsules:
+- **Level 1**: Dual Forward Lasers
+- **Level 2**: Angled Twin Cannons
+- **Level 3**: Homing Missile Pods unlocked
+- **Level 4**: Wide Spread Quad Lasers
+- **Level 5**: **MAX POWER** (Heavy Plasma Core + Dual Homing Missile Barrage)
 
-### 2. Item Power-Up
-Musuh yang hancur memiliki peluang menjatuhkan power-up:
-- **`[S]` Shield**: Menambah 1 baris perisai pelindung pesawat (Maks. 3)
-- **`[W]` Weapon**: Menaikkan level senjata Starfighter (Maks. Lv 4)
-- **`[B]` Smart Bomb**: Menambah 1 stok bom penghancur layar (Maks. 3)
-- **`[+]` Extra Life**: Tambahan 1 nyawa cadangan (Maks. 5)
-- **`[O]` Overdrive**: Masuk ke mode **Hyper Speed** & tembakan super cepat selama 3 detik!
+### 2. Pickups & Power-Ups
+Destroyed enemies have chances to drop various items:
+- **`[P]` Power Up**: Upgrades starfighter weapon level (Max Lv 5; awards 5,000 pts when at MAX)
+- **`[B]` Smart Bomb**: Adds +1 screen-clearing bomb stock (Max 5)
+- **`[S]` Energy Shield**: Grants protective barrier absorbing 1 fatal hit
+- **`[+]` 1UP Extra Life**: Grants +1 reserve life (Earned via pickup or every 150,000 points)
+- **`[◆]` Crystal Gem**: Boosts score and sustains the chain multiplier gauge; fly towards the top of the screen to auto-collect!
 
-### 3. Ragam Musuh & Boss
-- **Scout (`v`)**: Cepat, gerakan zig-zag, 1 HP (100 pts)
-- **Raider (`/V\`)**: Kecepatan sedang, menembak laser ke arah bawah, 2 HP (250 pts)
-- **Bomber (`<[W]>`)**: Tanky dan lambat, menembakkan 2 peluru menyebar, 4 HP (450 pts)
-- **Asteroid (`(@)`)**: Asteroid luar angkasa yang pecah menjadi serpihan batu kecil (`o`) saat ditembak, 3 HP (150 pts)
-- **DREADNOUGHT BOSS (`/===[ OMEGA CORE ]===\`)**:
-  - Muncul di setiap Wave 5, 10, dst.
-  - Memiliki Health Bar di layar atas, menembakkan barrage peluru 3 arah, dan bergerak menyapu area perang luar angkasa!
+### 3. Enemy Fleet & Boss Battles
+- **Drone**: Quick scouts moving in sine waves or curved arcs.
+- **Fighter**: Tactical interceptors flying in V-formations with targeted spread shots.
+- **Bomber**: Heavy armored gunships firing radial projectile rings.
+- **Diver**: High-velocity kamikaze dive-bombers aimed straight at your cockpit.
+- **Orb**: Heavy energy turrets spinning spiral bullet-hell patterns.
+- **Asteroid**: Space rocks that fracture into smaller pebbles upon destruction.
+- **BOSS**: Sector flagship featuring 3 distinct attack phases, massive health bar, and dynamic bullet hell patterns!
 
-### 4. Sistem Skor & Combo Multiplier
-- Mengalahkan musuh secara beruntun akan memicu **Combo Multiplier** (hingga **4x lipat skor**)!
-- Rekor tertinggi (*High Score*) otomatis tersimpan ke file `highscore.dat`.
+### 4. Scoring, Graze & Chain Multiplier
+- **Chain Multiplier**: Eliminate enemies consecutively to build your combo multiplier up to **9x**!
+- **Graze System**: Skim closely past enemy projectiles without taking damage to earn bonus score and extend your chain meter.
+- **Save System**: High scores and user settings are automatically saved to [`vanguard.sav`](file:///d:/Project/Space%20Vanguard/vanguard.sav).
 
 ---
 
-## 🛠️ Cara Re-Compile Ulang (Opsional)
+## 🛠️ How to Re-Compile (Optional)
 
-Jika kamu ingin memodifikasi kode sumber di [`main.c`](file:///d:/Project/main.c):
-1. Cukup jalankan [`build.bat`](file:///d:/Project/build.bat), atau:
-2. Jalankan perintah berikut di PowerShell / Command Prompt:
+If you modify the source code in [`main.c`](file:///d:/Project/Space%20Vanguard/main.c):
+1. Simply run [`build.bat`](file:///d:/Project/Space%20Vanguard/build.bat), or:
+2. Run the following command in PowerShell / Command Prompt:
    ```cmd
-   clang -O2 -Wall main.c -o game.exe -lkernel32 -luser32
+   clang -O2 -std=c11 main.c -o game.exe -lwinmm -luser32
    ```
 
 ---
 
-## ⚡ Sorotan Arsitektur Teknis
-- **Double Buffering Console**: Menggunakan struktur `CHAR_INFO` dan fungsi `WriteConsoleOutputA` dari Windows API untuk memindahkan frame buffer ke layar secara instan dalam 1 operasi tanpa kedip (*100% zero-flicker*).
-- **Asynchronous Audio Thread**: Efek suara arcade menggunakan `Beep()` yang dijalankan di background thread (`CreateThread`) sehingga sama sekali tidak menghambat fluiditas game loop di 35-40 FPS.
-- **Particle System**: Efek percikan ledakan puing bintang beranimasi dengan kalkulasi sudut polar trigonometris (`sinf`, `cosf`).
+## ⚡ Technical Highlights
+- **Console Half-Block Double Buffering**: Uses Windows Console API (`CHAR_INFO` and `WriteConsoleOutputW`) with unicode half-block characters (`▀`) to render a smooth 96x56 color framebuffer with zero flickering (100% zero-flicker).
+- **Asynchronous Audio Synthesizer**: Low-latency multi-channel sound synthesizer using Windows `waveOut` API running on a dedicated worker thread for chiptune melodies and retro sound effects without stalling the 60 FPS gameplay loop.
+- **Collision & Particle Physics**: Sub-pixel precision floating-point movement, trigonometric wave patterns, radial shockwaves, screen shake, and responsive controls.

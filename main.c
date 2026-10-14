@@ -1,20 +1,20 @@
 /* ==========================================================================
  *  SPACE VANGUARD 2.0 : STAR CITADEL
- *  Shoot 'em up arcade untuk Windows Console - ditulis murni dalam C.
+ *  Arcade shoot 'em up for Windows Console - written purely in C.
  *
- *  Fitur utama v2.0
- *   - Grafis "pixel" 96x56 memakai karakter half-block (2 pixel per sel)
- *   - Sprite pixel-art, partikel ledakan, shockwave, screen shake, flash
- *   - Synthesizer audio real-time (winmm): SFX chiptune + musik latar
- *   - 3 sektor bertema (planet & nebula) + boss 3 fase pola bullet-hell
- *   - Power 5 level + misil pelacak, bom, shield, graze, chain multiplier
- *   - Papan skor top-5 dengan input nama, 3 tingkat kesulitan
+ *  Main features v2.0
+ *   - 96x56 "pixel" graphics using half-block characters (2 pixels per cell)
+ *   - Pixel-art sprites, explosion particles, shockwaves, screen shake, flash
+ *   - Real-time audio synthesizer (winmm): chiptune SFX + background music
+ *   - 3 themed sectors (planets & nebulae) + 3-phase bullet-hell bosses
+ *   - 5 power levels + homing missiles, bombs, shields, graze, chain multiplier
+ *   - Top-5 leaderboard with name entry, 3 difficulty levels
  *
- *  Kontrol : WASD/Panah gerak, SPASI/Z/J tembak, SHIFT fokus,
- *            B/X/K bom, P/ESC pause, M musik, N efek suara
+ *  Controls: WASD/Arrows move, SPACE/Z/J shoot, SHIFT focus,
+ *            B/X/K bomb, P/ESC pause, M music, N sound effects
  *
  *  Build   : clang -O2 -std=c11 main.c -o game.exe -lwinmm -luser32
- *  Selftest: game.exe --selftest   (simulasi tanpa layar untuk uji crash)
+ *  Selftest: game.exe --selftest   (headless simulation crash test)
  * ========================================================================== */
 #define WIN32_LEAN_AND_MEAN
 #define _CRT_SECURE_NO_WARNINGS
@@ -33,13 +33,13 @@
 #endif
 
 /* ------------------------------------------------------------------------ */
-/*  Konstanta                                                                */
+/*  Constants                                                                */
 /* ------------------------------------------------------------------------ */
-#define COLS   96          /* lebar konsol (karakter)                      */
-#define ROWS   30          /* tinggi konsol (karakter)                     */
-#define PW     96          /* lebar area pixel                             */
-#define PH     56          /* tinggi area pixel (baris 1..28 x 2)          */
-#define PROW0  1           /* baris karakter pertama area pixel            */
+#define COLS   96          /* console width (characters)                   */
+#define ROWS   30          /* console height (characters)                  */
+#define PW     96          /* pixel area width                             */
+#define PH     56          /* pixel area height (rows 1..28 x 2)           */
+#define PROW0  1           /* first character row of pixel area            */
 #define PI_F   3.14159265f
 #define TAU_F  6.28318531f
 #define NROWS(a) ((int)(sizeof(a) / sizeof((a)[0])))
@@ -48,7 +48,7 @@ static volatile bool running = true;
 static bool g_selftest = false, g_god = false;
 
 /* ------------------------------------------------------------------------ */
-/*  Utilitas                                                                 */
+/*  Utilities                                                                */
 /* ------------------------------------------------------------------------ */
 static uint32_t g_rng = 0x9E3779B9u;
 static uint32_t Rnd(void) { uint32_t x = g_rng; x ^= x << 13; x ^= x >> 17; x ^= x << 5; return g_rng = x; }
@@ -61,7 +61,7 @@ static int Maxi(int a, int b) { return a > b ? a : b; }
 static int Rnd2i(float v) { return (int)floorf(v + 0.5f); }
 
 /* ------------------------------------------------------------------------ */
-/*  Layar: framebuffer pixel + layer teks -> CHAIN_INFO half-block           */
+/*  Screen: pixel framebuffer + text layer -> CHAR_INFO half-block           */
 /* ------------------------------------------------------------------------ */
 static HANDLE hOut, hIn;
 static DWORD origInMode;
@@ -151,7 +151,7 @@ static void CheckWindow(void) {
     } else {
         wchar_t msg[160];
         DWORD w;
-        int n = swprintf(msg, 160, L" Jendela terlalu kecil (%dx%d). Perbesar ke minimal %dx%d. ", ww, wh, COLS, ROWS);
+        int n = swprintf(msg, 160, L" Window is too small (%dx%d). Please resize to at least %dx%d. ", ww, wh, COLS, ROWS);
         COORD o = {i.srWindow.Left, i.srWindow.Top};
         if (n > ww) n = ww;
         WriteConsoleOutputCharacterW(hOut, msg, (DWORD)n, o, &w);
@@ -167,8 +167,8 @@ static void SetupConsole(void) {
     m &= ~(DWORD)(ENABLE_QUICK_EDIT_MODE | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
     m |= ENABLE_EXTENDED_FLAGS;
     SetConsoleMode(hIn, m);
-    /* Di console host klasik kita bisa memaksa ukuran jendela.
-       Di Windows Terminal (WT_SESSION) ukuran diatur user; game akan center. */
+    /* In classic console host, window size can be forced.
+       In Windows Terminal (WT_SESSION), user manages size; game centers. */
     if (!getenv("WT_SESSION")) {
         CONSOLE_SCREEN_BUFFER_INFO i;
         if (GetConsoleScreenBufferInfo(hOut, &i)) {
@@ -247,10 +247,10 @@ static void PTextCEx(int y, const char *s, int c, int sc, const uint8_t *grad, b
 }
 
 /* ------------------------------------------------------------------------ */
-/*  Sprite pixel-art (huruf = warna, '.' = transparan)                       */
-/*  K hitam b biru-tua g hijau-tua c cyan-tua r merah-tua m magenta-tua      */
-/*  y kuning-tua w abu k abu-gelap B biru G hijau C cyan R merah M magenta   */
-/*  Y kuning W putih.  Sprite simetris cukup ditulis setengah + kolom tengah */
+/*  Pixel-art sprites (letter = color, '.' = transparent)                    */
+/*  K black b dark-blue g dark-green c dark-cyan r dark-red m dark-magenta   */
+/*  y dark-yellow w gray k dark-gray B blue G green C cyan R red M magenta   */
+/*  Y yellow W white. Symmetrical sprite needs only half + center column     */
 /* ------------------------------------------------------------------------ */
 typedef struct { int8_t px[16][32]; int w, h; } Sprite;
 
@@ -331,12 +331,12 @@ static void InitSprites(void) {
     ESPR[E_DIVER] = &sDiver; ESPR[E_ORB] = &sOrb; ESPR[E_ROCK] = &sRock;
     ESPR[E_PEBBLE] = &sPebble; ESPR[E_BOSS] = &sBoss;
     memset(REMAP, 0xFF, sizeof REMAP);
-    REMAP[1][13] = 10; REMAP[1][12] = 2; REMAP[1][4] = 2;   /* boss sektor 2: hijau  */
-    REMAP[2][13] = 14; REMAP[2][12] = 6;                    /* boss sektor 3: emas   */
+    REMAP[1][13] = 10; REMAP[1][12] = 2; REMAP[1][4] = 2;   /* sector 2 boss: green  */
+    REMAP[2][13] = 14; REMAP[2][12] = 6;                    /* sector 3 boss: gold   */
 }
 
 /* ------------------------------------------------------------------------ */
-/*  Audio: synthesizer real-time via waveOut (SFX + musik chiptune)          */
+/*  Audio: real-time synthesizer via waveOut (SFX + chiptune music)          */
 /* ------------------------------------------------------------------------ */
 #define SR     22050
 #define ABUF   512
@@ -379,7 +379,7 @@ static float Osc(int wave, float *ph, float f, float duty, float *nv) {
     }
 }
 
-/* Lagu: A minor, 8 bar x 16 step. Am F C G | Am F G E */
+/* Music track: A minor, 8 bars x 16 steps. Am F C G | Am F G E */
 static const int MEL[128] = {
     76, 0, 0, 74, 72, 0, 69, 0, 72, 0, 74, 0, 76, 0, 0, 0,
     77, 0, 0, 76, 74, 0, 72, 0, 69, 0, 72, 0, 77, 0, 76, 0,
@@ -553,7 +553,7 @@ static void Sfx(int id) {
 }
 
 /* ------------------------------------------------------------------------ */
-/*  Input (GetAsyncKeyState + deteksi tekan)                                 */
+/*  Input (GetAsyncKeyState + press detection)                                 */
 /* ------------------------------------------------------------------------ */
 static uint8_t kNow[256], kOld[256];
 #define KD(k) (kNow[(k)])
@@ -569,14 +569,14 @@ static bool HasFocus(void) {
     HWND cw = GetConsoleWindow();
     if (!cw) return true;
     HWND fg = GetForegroundWindow();
-    if (IsWindowVisible(cw)) return fg == cw;           /* console host klasik   */
+    if (IsWindowVisible(cw)) return fg == cw;           /* classic console host  */
     HWND own = GetWindow(cw, GW_OWNER);                  /* Windows Terminal      */
     if (own) return own == fg || GetAncestor(own, GA_ROOT) == fg;
     return true;
 }
 
 /* ------------------------------------------------------------------------ */
-/*  Simpanan: skor tertinggi + pengaturan                                    */
+/*  Save data: high scores + settings                                        */
 /* ------------------------------------------------------------------------ */
 typedef struct { char name[4]; long long score; int stage; } HiEntry;
 typedef struct { uint32_t magic; int diff, music, sfx; HiEntry hs[5]; } SaveData;
@@ -618,7 +618,7 @@ static int QualifyRank(long long sc) {
 }
 
 /* ------------------------------------------------------------------------ */
-/*  Entitas game                                                             */
+/*  Game entities                                                            */
 /* ------------------------------------------------------------------------ */
 enum { MV_LINE, MV_SINE, MV_HOVER, MV_ARC, MV_DIVE, MV_BOSS };
 enum { PK_POWER, PK_BOMB, PK_LIFE, PK_SHIELD, PK_GEM };
@@ -678,11 +678,11 @@ static const char *SECTOR[3] = {"ORION BELT", "NEBULA VEIL", "CRIMSON CORE"};
 
 static void EnterGameOver(void);
 
-/* ---- tingkat kesulitan ---- */
+/* ---- difficulty ---- */
 static float BSpd(void) { static const float d[3] = {0.8f, 1.0f, 1.15f}; return d[difficulty] * (1.0f + 0.12f * (float)loopN); }
 static float FireMul(void) { static const float d[3] = {0.6f, 1.0f, 1.35f}; return d[difficulty] * (1.0f + 0.25f * (float)loopN) * (1.0f + 0.05f * (float)theme); }
 
-/* ---- efek ---- */
+/* ---- effects ---- */
 static void AddPart(float x, float y, float vx, float vy, int life, int type, int col) {
     static int cur = 0;
     for (int k = 0; k < MAX_PA; k++) {
@@ -744,7 +744,7 @@ static void Explode(float x, float y, int size) {
     Sfx(size <= 1 ? S_EXPL_S : (size == 2 ? S_EXPL_M : S_EXPL_L));
 }
 
-/* ---- peluru musuh ---- */
+/* ---- enemy bullets ---- */
 static float AimAt(float x, float y) { return atan2f(P.y - y, P.x - x); }
 static void EFire(float x, float y, float ang, float spd, int kind) {
     for (int i = 0; i < MAX_ES; i++)
@@ -771,7 +771,7 @@ static void ClearBulletsNear(float x, float y, float r) {
     }
 }
 
-/* ---- skor ---- */
+/* ---- score ---- */
 static int Mult(void) { int m = 1 + P.chain / 10; return m > 9 ? 9 : m; }
 static void AddScore(long long v) {
     P.score += v;
@@ -793,7 +793,7 @@ static void ClearBulletsToGems(void) {
     }
 }
 
-/* ---- musuh ---- */
+/* ---- enemies ---- */
 static Enemy *SpawnEnemy(int type, float x, float y, int mv) {
     for (int i = 0; i < MAX_EN; i++) {
         if (en[i].on) continue;
@@ -875,7 +875,7 @@ static void DamageEnemy(Enemy *e, int dmg) {
     else { P.score += 10; Sfx(S_HIT); }
 }
 
-/* ---- pemain ---- */
+/* ---- player ---- */
 static void HurtPlayer(void) {
     if (g_god || P.dead || P.invuln > 0 || P.bombT > 0) return;
     if (P.shieldT > 0) {
@@ -1050,7 +1050,7 @@ static void UpdateBoss(Enemy *e) {
     }
 }
 
-/* ---- AI musuh biasa ---- */
+/* ---- regular enemy AI ---- */
 static void EnemyShoot(Enemy *e, float fm) {
     switch (e->type) {
     case E_DRONE:
@@ -1136,7 +1136,7 @@ static void UpdateEnemies(void) {
     }
 }
 
-/* ---- peluru ---- */
+/* ---- bullets ---- */
 static void UpdatePShots(void) {
     for (int i = 0; i < MAX_PS; i++) {
         PShot *b = &ps[i];
@@ -1200,7 +1200,7 @@ static void UpdateEShots(void) {
     }
 }
 
-/* ---- item ---- */
+/* ---- items ---- */
 static void Collect(Pickup *p) {
     p->on = false;
     switch (p->type) {
@@ -1259,7 +1259,7 @@ static void UpdatePickups(void) {
     }
 }
 
-/* ---- partikel, ring, popup, bintang ---- */
+/* ---- particles, rings, popups, stars ---- */
 static void UpdateFX(void) {
     for (int i = 0; i < MAX_PA; i++) {
         Part *p = &pa[i];
@@ -1302,19 +1302,19 @@ static void UpdateStars(void) {
 }
 
 /* ------------------------------------------------------------------------ */
-/*  Stage & gelombang musuh                                                  */
+/*  Stage & enemy waves                                                      */
 /* ------------------------------------------------------------------------ */
 static void SpawnWave(int id) {
     Enemy *e;
     switch (id) {
-    case 0: { /* ular drone gelombang sinus */
+    case 0: { /* sine wave drone snake */
         float amp = Rr(8, 22), bx = Rr(amp + 5, PW - amp - 5);
         for (int i = 0; i < 6; i++) {
             if (!(e = SpawnEnemy(E_DRONE, bx, -5, MV_SINE))) break;
             e->vy = 0.42f; e->p1 = 0.05f; e->p2 = amp; e->t = -i * 12;
         }
     } break;
-    case 1: { /* sapuan melengkung dari samping */
+    case 1: { /* curved sweep from sides */
         int side = Ri(0, 1);
         float y0 = Rr(3, 12);
         for (int i = 0; i < 7; i++) {
@@ -1322,7 +1322,7 @@ static void SpawnWave(int id) {
             e->vx = side ? -0.9f : 0.9f; e->vy = 0.5f; e->p1 = -0.008f; e->t = -i * 10;
         }
     } break;
-    case 2: { /* formasi V fighter */
+    case 2: { /* V fighter formation */
         static const float ox[5] = {0, -9, 9, -18, 18}, oy[5] = {0, -4, -4, -8, -8};
         float cx = Rr(26, PW - 26);
         for (int i = 0; i < 5; i++) {
@@ -1330,20 +1330,20 @@ static void SpawnWave(int id) {
             e->p1 = 18 + oy[i]; e->p2 = 5; e->stay = Ri(380, 460); e->t = -i * 6;
         }
     } break;
-    case 3: { /* kamikaze */
+    case 3: { /* dive / kamikaze */
         int n = 3 + Mini(stage, 4);
         for (int i = 0; i < n; i++) {
             if (!(e = SpawnEnemy(E_DIVER, Rr(8, PW - 8), -4, MV_DIVE))) break;
             e->p1 = Rr(6, 18); e->t = -i * 22;
         }
     } break;
-    case 4: /* hujan asteroid */
+    case 4: /* asteroid rain */
         for (int i = 0; i < 6; i++) {
             if (!(e = SpawnEnemy(E_ROCK, Rr(6, PW - 6), -6, MV_LINE))) break;
             e->vx = Rr(-0.15f, 0.15f); e->vy = Rr(0.25f, 0.45f); e->t = -i * 25;
         }
         break;
-    case 5: { /* bomber + pengawal */
+    case 5: { /* bomber + escort */
         int n = stage >= 3 ? 2 : 1;
         for (int k = 0; k < n; k++) {
             float x = n == 1 ? PW / 2 : (k ? PW * 0.72f : PW * 0.28f);
@@ -1356,7 +1356,7 @@ static void SpawnWave(int id) {
             e->vy = 0.45f; e->p1 = 0.06f; e->p2 = 14; e->t = -60 - i * 12;
         }
     } break;
-    default: /* orb penembak spiral */
+    default: /* spiral shooting orb */
         for (int k = 0; k < 2; k++) {
             if (!(e = SpawnEnemy(E_ORB, k ? PW * 0.7f : PW * 0.3f, -6, MV_HOVER))) break;
             e->p1 = 16; e->p2 = 4; e->stay = 420;
@@ -1580,7 +1580,7 @@ static void DrawHUD(void) {
     if (P.power == 5) TPrint(40, ROWS - 1, "MAX", 14, 0);
     snprintf(b, sizeof b, "GRAZE %d", P.graze); TPrint(45, ROWS - 1, b, 7, 0);
     if (P.shieldT > 0) TPrint(57, ROWS - 1, "SHIELD", (P.shieldT > 120 || gframe % 8 < 4) ? 11 : 3, 0);
-    TPrint(COLS - 26, ROWS - 1, "P:PAUSE  M:MUSIK  N:SFX", 8, 0);
+    TPrint(COLS - 26, ROWS - 1, "P:PAUSE  M:MUSIC  N:SFX", 8, 0);
 }
 static void RenderPlay(void) {
     DrawBackground();
@@ -1638,7 +1638,7 @@ static void RenderPlay(void) {
     }
     useShake = 0;
 
-    /* bar HP boss */
+    /* boss HP bar */
     if (bossIdx >= 0 && en[bossIdx].on && sphase == SPH_BOSS && !en[bossIdx].dying && en[bossIdx].t > 0) {
         Enemy *e = &en[bossIdx];
         float f = (float)e->hp / (float)e->maxhp;
@@ -1668,7 +1668,7 @@ static void RenderPlay(void) {
                 PRaw(x, 15 + k, on ? 12 : 0); PRaw(x, 35 + k, on ? 12 : 0);
             }
         if ((stimer / 10) % 2 == 0) PTextCEx(19, "WARNING", 12, 2, NULL, true);
-        PTextCEx(30, "BOSS MENDEKAT", 15, 1, NULL, true);
+        PTextCEx(30, "BOSS APPROACHING", 15, 1, NULL, true);
     }
     if (sphase == SPH_CLEAR) {
         static const uint8_t GC[5] = {15, 11, 11, 9, 1};
@@ -1677,7 +1677,7 @@ static void RenderPlay(void) {
         if (stimer > 40) { snprintf(b, sizeof b, "BOSS BONUS      %10lld", bonusBoss); TPrintC(14, b, 15, 0); }
         if (stimer > 80) { snprintf(b, sizeof b, "NO MISS BONUS   %10lld", bonusNoMiss); TPrintC(16, b, bonusNoMiss ? 10 : 8, 0); }
         if (stimer > 120) { snprintf(b, sizeof b, "GRAZE BONUS     %10lld", bonusGraze); TPrintC(18, b, 13, 0); }
-        if (stimer > 180) TPrintC(21, "BERSIAP KE SEKTOR BERIKUTNYA...", (gframe / 10) % 2 ? 14 : 7, 0);
+        if (stimer > 180) TPrintC(21, "PREPARING FOR NEXT SECTOR...", (gframe / 10) % 2 ? 14 : 7, 0);
     }
     if (flashT > 0)
         for (int y = 0; y < PH; y++)
@@ -1702,15 +1702,15 @@ static void RenderTitle(void) {
     for (int k = 0; k < Ri(1, 3); k++) { PSet(sx - 3, 54 + k, k ? 12 : 14); PSet(sx + 3, 54 + k, k ? 12 : 14); }
     DrawParticles();
 
-    TPrintC(14, "~  S T A R   C I T A D E L   ::   E D I S I   2 . 0  ~", 13, 0);
+    TPrintC(14, "~  S T A R   C I T A D E L   ::   E D I T I O N   2 . 0  ~", 13, 0);
     char items[7][40];
-    snprintf(items[0], 40, "MULAI MISI");
-    snprintf(items[1], 40, "KESULITAN  < %s >", DIFF_NAME[difficulty]);
-    snprintf(items[2], 40, "MUSIK      %s", musicOn ? "ON" : "OFF");
-    snprintf(items[3], 40, "EFEK SUARA %s", sfxOn ? "ON" : "OFF");
-    snprintf(items[4], 40, "CARA BERMAIN");
-    snprintf(items[5], 40, "PAPAN SKOR");
-    snprintf(items[6], 40, "KELUAR");
+    snprintf(items[0], 40, "START MISSION");
+    snprintf(items[1], 40, "DIFFICULTY  < %s >", DIFF_NAME[difficulty]);
+    snprintf(items[2], 40, "MUSIC       %s", musicOn ? "ON" : "OFF");
+    snprintf(items[3], 40, "SOUND FX    %s", sfxOn ? "ON" : "OFF");
+    snprintf(items[4], 40, "HOW TO PLAY");
+    snprintf(items[5], 40, "LEADERBOARD");
+    snprintf(items[6], 40, "QUIT");
     for (int i = 0; i < 7; i++) {
         bool sel = i == menuSel;
         TPrint(38, 16 + i, items[i], sel ? ((gframe / 8) % 2 ? 14 : 15) : 7, 0);
@@ -1719,25 +1719,25 @@ static void RenderTitle(void) {
     char b[64];
     snprintf(b, sizeof b, "HI-SCORE  %s  %lld", save.hs[0].name, save.hs[0].score);
     TPrintC(24, b, 14, 0);
-    TPrintC(ROWS - 1, "ATAS/BAWAH: PILIH   KIRI/KANAN: UBAH   ENTER/SPASI: OK", 8, 0);
+    TPrintC(ROWS - 1, "UP/DOWN: SELECT   LEFT/RIGHT: CHANGE   ENTER/SPACE: OK", 8, 0);
     TPrint(COLS - 6, 0, "v2.0", 8, 0);
 }
 static void RenderHowTo(void) {
     DrawBackground();
     for (int y = 0; y < PH; y++) for (int x = 0; x < PW; x++) fb[y][x] = DIM[fb[y][x]];
-    TPrintC(1, "=====  CARA BERMAIN  =====", 14, 0);
+    TPrintC(1, "=====  HOW TO PLAY  =====", 14, 0);
     static const char *L[] = {
-        "KONTROL", "WASD / PANAH     Gerakkan pesawat", "SPASI / Z / J    Tembak (tahan)",
-        "SHIFT (tahan)    Mode fokus: pelan & presisi", "B / X / K        Bom: hapus peluru, kebal",
-        "P / ESC          Pause", "M / N            Musik / Efek suara on-off", "",
-        "SISTEM", "- Hitbox cuma 1 titik di kokpit pesawat", "- GRAZE: nyerempet peluru = +skor",
-        "- CHAIN: bunuh beruntun = pengali skor", "  (maks x9). Kristal menjaga chain hidup",
-        "- Terbang ke atas = kristal tersedot", "- Extra life tiap 150.000 poin",
-        "- Power 3+ membuka misil pelacak", "- Boss di akhir sektor, 3 fase serangan",
+        "CONTROLS", "WASD / ARROWS    Move starfighter", "SPACE / Z / J    Fire (hold)",
+        "SHIFT (hold)     Focus mode: slow & precision", "B / X / K        Bomb: clear bullets, invuln",
+        "P / ESC          Pause", "M / N            Music / Sound FX toggle", "",
+        "SYSTEM", "- Hitbox is a single point at ship cockpit", "- GRAZE: near-miss bullets = bonus score",
+        "- CHAIN: consecutive kills = score mult", "  (max x9). Crystals sustain chain meter",
+        "- Fly towards top = auto-collect gems", "- Extra life every 150,000 points",
+        "- Power 3+ unlocks homing missiles", "- Boss at sector end with 3 attack phases",
     };
     for (int i = 0; i < NROWS(L); i++) TPrint(3, 3 + i, L[i], (i == 0 || i == 8) ? 11 : 7, 0);
-    TPrint(55, 3, "ITEM", 11, 0);
-    static const char *IT[4] = {"POWER  senjata +1 (maks 5)", "BOMB   stok bom +1", "SHIELD tahan 1 serangan", "1UP    nyawa +1"};
+    TPrint(55, 3, "ITEMS", 11, 0);
+    static const char *IT[4] = {"POWER  weapon +1 (max 5)", "BOMB   bomb stock +1", "SHIELD absorb 1 hit", "1UP    extra life +1"};
     static const int ITY[4] = {PK_POWER, PK_BOMB, PK_SHIELD, PK_LIFE};
     for (int i = 0; i < 4; i++) {
         int row = 5 + i * 4;
@@ -1745,8 +1745,8 @@ static void RenderHowTo(void) {
         TPrint(61, row, IT[i], 15, 0);
     }
     DrawPickupAt(PK_GEM, 56, (21 - 1) * 2 + 1, gframe);
-    TPrint(61, 21, "KRISTAL  +skor & chain", 15, 0);
-    TPrint(3, 22, "MUSUH", 11, 0);
+    TPrint(61, 21, "CRYSTAL  +score & chain", 15, 0);
+    TPrint(3, 22, "ENEMIES", 11, 0);
     SprDraw(&sDrone, 8, 50, false, NULL);
     SprDraw(&sFighter, 20, 50, false, NULL);
     SprDraw(&sDiver, 31, 50, false, NULL);
@@ -1754,7 +1754,7 @@ static void RenderHowTo(void) {
     SprDraw(&sBomber, 56, 50, false, NULL);
     SprDraw(&sRock, 70, 50, false, NULL);
     SprDraw(&sBoss, 82, 47, false, REMAP[0]);
-    TPrintC(ROWS - 1, "ENTER / ESC : KEMBALI", 8, 0);
+    TPrintC(ROWS - 1, "ENTER / ESC : BACK", 8, 0);
 }
 static void RenderScores(void) {
     DrawBackground();
@@ -1765,7 +1765,7 @@ static void RenderScores(void) {
         int col = i == scoreHL ? ((gframe / 6) % 2 ? 14 : 15) : (i == 0 ? 14 : 15);
         TPrintC(10 + i * 2, b, col, 0);
     }
-    TPrintC(ROWS - 3, "ENTER / ESC : KEMBALI", 8, 0);
+    TPrintC(ROWS - 3, "ENTER / ESC : BACK", 8, 0);
 }
 static void RenderGameOver(void) {
     DrawBackground();
@@ -1773,24 +1773,24 @@ static void RenderGameOver(void) {
     DrawParticles();
     PTextCEx(6, "GAME OVER", 15, 2, G_RED, true);
     char b[64];
-    snprintf(b, sizeof b, "SKOR AKHIR   %012lld", P.score); TPrint(32, 11, b, 15, 0);
+    snprintf(b, sizeof b, "FINAL SCORE  %012lld", P.score); TPrint(32, 11, b, 15, 0);
     snprintf(b, sizeof b, "STAGE        %d", stage);       TPrint(32, 13, b, 7, 0);
-    snprintf(b, sizeof b, "MUSUH        %d", P.kills);     TPrint(32, 14, b, 7, 0);
+    snprintf(b, sizeof b, "ENEMIES      %d", P.kills);     TPrint(32, 14, b, 7, 0);
     snprintf(b, sizeof b, "GRAZE        %d", P.graze);     TPrint(32, 15, b, 7, 0);
     snprintf(b, sizeof b, "MAX CHAIN    %d", P.maxChain);  TPrint(32, 16, b, 7, 0);
     if (goTimer > 60) {
         if (nameRank >= 0) {
-            snprintf(b, sizeof b, "*** REKOR BARU!  PERINGKAT #%d ***", nameRank + 1);
+            snprintf(b, sizeof b, "*** NEW RECORD!  RANK #%d ***", nameRank + 1);
             TPrintC(19, b, (gframe / 8) % 2 ? 14 : 15, 0);
-            TPrintC(22, "ENTER : TULIS NAMA", 10, 0);
+            TPrintC(22, "ENTER : ENTER NAME", 10, 0);
         } else {
-            TPrintC(22, "ENTER : MENU UTAMA      R : MAIN LAGI", (gframe / 15) % 2 ? 15 : 7, 0);
+            TPrintC(22, "ENTER : MAIN MENU      R : RETRY", (gframe / 15) % 2 ? 15 : 7, 0);
         }
     }
 }
 static void RenderName(void) {
     DrawBackground();
-    PTextCEx(6, "REKOR BARU!", 15, 2, G_FIRE, true);
+    PTextCEx(6, "NEW RECORD!", 15, 2, G_FIRE, true);
     int x0 = (PW - (3 * 12 - 3)) / 2;
     for (int i = 0; i < 3; i++) {
         char s[2] = {nameBuf[i], 0};
@@ -1799,14 +1799,14 @@ static void RenderName(void) {
         if (cur) for (int k = 0; k < 9; k++) PRaw(x0 + i * 12 + k, 39, 14);
     }
     char b[64];
-    snprintf(b, sizeof b, "SKOR %lld", P.score);
+    snprintf(b, sizeof b, "SCORE %lld", P.score);
     TPrintC(23, b, 15, 0);
-    TPrintC(26, "ATAS/BAWAH: HURUF   KIRI/KANAN: PINDAH   ENTER: OK", 7, 0);
+    TPrintC(26, "UP/DOWN: LETTER   LEFT/RIGHT: MOVE   ENTER: OK", 7, 0);
 }
 static void RenderPauseOverlay(void) {
     for (int y = 0; y < PH; y++) for (int x = 0; x < PW; x++) fb[y][x] = DIM[fb[y][x]];
     PTextCEx(14, "PAUSE", 15, 2, NULL, true);
-    static const char *it[2] = {"LANJUTKAN", "KEMBALI KE MENU"};
+    static const char *it[2] = {"RESUME", "RETURN TO MENU"};
     for (int i = 0; i < 2; i++) {
         bool sel = i == pauseSel;
         TPrint(40, 15 + i, it[i], sel ? 14 : 7, 0);
@@ -1921,7 +1921,7 @@ static void UpdateSimpleScreen(void) {
 }
 
 /* ------------------------------------------------------------------------ */
-/*  Loop utama                                                               */
+/*  Main loop                                                                */
 /* ------------------------------------------------------------------------ */
 static void SelfTestInput(void) {
     static int dir = 0;
@@ -2027,6 +2027,6 @@ int main(int argc, char **argv) {
     WriteSave();
     timeEndPeriod(1);
     RestoreConsole();
-    printf("Terima kasih sudah bermain SPACE VANGUARD 2.0!\n");
+    printf("Thank you for playing SPACE VANGUARD 2.0!\n");
     return 0;
 }
