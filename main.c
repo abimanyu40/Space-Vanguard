@@ -13,7 +13,8 @@
  *  Controls: WASD/Arrows move, SPACE/Z/J shoot, SHIFT focus,
  *            B/X/K bomb, P/ESC pause, M music, N sound effects
  *
- *  Build   : clang -O2 -std=c11 main.c -o game.exe -lwinmm -luser32
+ *  Build   : gcc -O2 -std=c11 main.c -o game.exe -lwinmm -luser32
+ *            (or: clang -O2 -std=c11 main.c -o game.exe -lwinmm -luser32)
  *  Selftest: game.exe --selftest   (headless simulation crash test)
  * ========================================================================== */
 #define WIN32_LEAN_AND_MEAN

@@ -69,14 +69,23 @@ Destroyed enemies have chances to drop various items:
 
 ---
 
-## 🛠️ How to Re-Compile (Optional)
+## 🛠️ How to Compile (Terminal)
 
-If you modify the source code in [`main.c`](file:///d:/Project/Space%20Vanguard/main.c):
-1. Simply run [`build.bat`](file:///d:/Project/Space%20Vanguard/build.bat), or:
-2. Run the following command in PowerShell / Command Prompt:
-   ```cmd
-   clang -O2 -std=c11 main.c -o game.exe -lwinmm -luser32
-   ```
+If you modify the source code in [`main.c`](file:///d:/Project/Space%20Vanguard/main.c), compile it directly in your terminal (PowerShell or Command Prompt):
+
+```powershell
+clang -O2 -std=c11 main.c -o game.exe -lwinmm -luser32
+```
+
+*(Alternatively, if you use GCC / MinGW):*
+```powershell
+gcc -O2 -std=c11 main.c -o game.exe -lwinmm -luser32
+```
+
+To run the game right after compilation:
+```powershell
+.\game.exe
+```
 
 ---
 
